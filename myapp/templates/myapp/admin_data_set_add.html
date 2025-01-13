@@ -1,0 +1,28 @@
+{% extends 'myapp/admin_base.html' %}
+{% load static %}
+{% block title %}Data Set Add{% endblock %}
+{% block body %}
+<center>
+    <h1>Data Set Add</h1>
+     <div class="container">
+         <form role="form" name="frm" action="{% url 'admin_data_set_add'%}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="data_path">Data :</label>
+            <textarea class="form-control" type="text" name="data_path" id="data_path"></textarea>
+        </div>
+       <div class="form-group">
+            <label for="sentiment_type">Sentiment :</label>
+           <select class="form-control" type="text" name="type_id" id="sentiment_type">
+               {%for tm in type_list%}
+               <option value="{{tm.id}}">{{tm.type_name}}</option>
+               {%endfor%}
+           </select>
+        </div>
+       <button type="submit" class="btn btn-info" id="bt" name="bt">Add</button>
+        <button type="reset" class="btn btn-info" id="rt" name="rt">Clear</button>
+    </form>
+     </div>
+    <h3>{{msg}}</h3>
+</center>
+{% endblock %}
