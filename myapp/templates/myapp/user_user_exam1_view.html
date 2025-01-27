@@ -1,0 +1,46 @@
+{% extends 'myapp/user_base.html' %}
+{% load static %}
+{% block title %}Exam Details{% endblock %}
+{% block body %}
+<center>
+    <h1>Exam Details</h1>
+    <div class="container">
+    <form role="form" name="frm" action="" method="post">
+        {% csrf_token %}
+        {% for ql in question_list %}
+        <h3>{{ql.question}}</h3>
+        <table class="table table-striped table-bordered">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Answer</th>
+                <th>Category</th>
+                <th>Date /Time</th>
+                <th>Action</th>
+            </tr>
+            </thead>
+
+            {% for ds in exam_list %}
+            {% if ql.id == ds.question_id %}
+            <tbody>
+            <tr>
+                <td>{{ ds.id }}</td>
+                <td>{{ ds.answer }}</td>
+                <td>{{ ds.category}}</td>
+                <td>{{ ds.dt}}/{{ds.tm}}</td>
+
+                <td>
+
+                </td>
+            </tr>
+            <tbody>
+            {% endif %}
+            {% endfor %}
+        </table>
+        {% endfor %}
+
+    </form>
+    </div>
+    <h3>{{msg}}</h3>
+</center>
+{% endblock %}
