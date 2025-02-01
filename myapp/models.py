@@ -1,13 +1,22 @@
 from django.db import models
+from django.contrib.auth.hashers import make_password, check_password
 
 # Create your models here.
 class user_login(models.Model):
     uname = models.CharField(max_length=100)
-    passwd = models.CharField(max_length=25)
+    passwd = models.CharField(max_length=128)
     u_type = models.CharField(max_length=10)
+
+    def set_password(self, raw_password):
+        self.passwd = make_password(raw_password)
+
+    def check_password(self, raw_password):
+        from django.contrib.auth.hashers import check_password
+        return check_password(raw_password, self.passwd)
 
     def __str__(self):
         return self.uname
+
 
 class user_details(models.Model):
     user_id = models.IntegerField()
