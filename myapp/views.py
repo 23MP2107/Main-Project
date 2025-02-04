@@ -276,25 +276,32 @@ def admin_user_details_add(request):
 
 #######################################################################
 ##################### USER ##################################
-
+from django.contrib.auth.hashers import check_password, make_password
 from .models import user_details
 
 def user_login_check(request):
     if request.method == 'POST':
         uname = request.POST.get('uname')
         passwd = request.POST.get('passwd')
+        try:
+            ul = user_login.objects.get(uname=uname, u_type='user')
+            if check_password(passwd, ul.passwd):  # Use check_password here
+                # Retrieve user details
+                user = user_details.objects.get(user_id=ul.id)
+                
+                # Store user info in session
+                request.session['user_id'] = user.user_id
+                request.session['user_name'] = user.fname  # You can also use 'uname' or 'fname'
 
-        ul = user_login.objects.filter(uname=uname, passwd=passwd, u_type='user')
-        print(len(ul))
-        if len(ul) == 1:
-            request.session['user_id'] = ul[0].id
-            request.session['user_name'] = ul[0].uname
-            context = {'uname': request.session['user_name']}
-            #send_mail('Login','welcome'+uname,uname)
-            return render(request, 'myapp/user_home.html',context)
-        else:
+                context = {'uname': request.session['user_name']}
+                return render(request, 'myapp/user_home.html', context)
+            else:
+                context = {'msg': 'Invalid Credentials'}
+                return render(request, 'myapp/user_login.html', context)
+
+        except user_login.DoesNotExist:
             context = {'msg': 'Invalid Credentials'}
-            return render(request, 'myapp/user_login.html',context)
+            return render(request, 'myapp/user_login.html', context)
     else:
         return render(request, 'myapp/user_login.html')
 
@@ -317,19 +324,28 @@ def user_details_add(request):
         email = request.POST.get('email')
         contact = request.POST.get('contact')
         password = request.POST.get('pwd')
-        uname=email
+        uname = email
         #status = "new"
 
-        ul = user_login(uname=uname, passwd=password, u_type='user')
+        hashed_password = make_password(password)
+        ul = user_login(uname=uname, passwd=hashed_password, u_type='user')
         ul.save()
-        user_id = user_login.objects.all().aggregate(Max('id'))['id__max']
-
-        ud = user_details(user_id=user_id,fname=fname, lname=lname, gender=gender, age=age,addr=addr, pin=pin, contact=contact, email=email )
+        
+         # Save the user details
+        ud = user_details(
+            user_id=ul.id,  # Use ul.id directly
+            fname=fname,
+            lname=lname,
+            gender=gender,
+            age=age,
+            addr=addr,
+            pin=pin,
+            contact=contact,
+            email=email
+        )
         ud.save()
-
-        print(user_id)
         context = {'msg': 'User Registered'}
-        return render(request, 'myapp/user_login.html',context)
+        return render(request, 'myapp/user_login.html', context)
 
     else:
         return render(request, 'myapp/user_details_add.html')
@@ -343,23 +359,24 @@ def user_changepassword(request):
         print("current_password" + str(current_password))
 
         try:
+            # Retrieve user_login instance
+            ul = user_login.objects.get(uname=uname)
 
-            ul = user_login.objects.get(uname=uname, passwd=current_password)
-
-            if ul is not None:
-                ul.passwd = new_password  # change field
+            # Verify current password
+            if check_password(current_password, ul.passwd):
+                # Set and hash the new password
+                ul.passwd = make_password(new_password)
                 ul.save()
-                context = {'msg':'Password Changed Successfully'}
-                return render(request, './myapp/user_changepassword.html',context)
+                context = {'msg': 'Password Changed Successfully'}
             else:
-                context = {'msg': 'Password Not Changed'}
-                return render(request, './myapp/user_changepassword.html', context)
-        except user_login.DoesNotExist:
-            context = {'msg': 'Password Not Changed'}
-            return render(request, './myapp/user_changepassword.html', context)
-    else:
-        return render(request, './myapp/user_changepassword.html')
+                context = {'msg': 'Incorrect current password'}
 
+        except user_login.DoesNotExist:
+            context = {'msg': 'User not found'}
+
+        return render(request, 'myapp/user_changepassword.html', context)
+    else:
+        return render(request, 'myapp/user_changepassword.html')
 
 
 def user_logout(request):
@@ -396,6 +413,7 @@ def user_user_exam1_add(request):
         context = {'msg': '','question_list':question_list}
         return render(request, './myapp/user_user_exam1_add.html',context)
 from datetime import datetime
+
 def user_user_exam1_view(request):
     msg =''
     user_id = request.session['user_id']
